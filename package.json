@@ -9,7 +9,11 @@
   "author": "Priit Kallas <kallaspriit@gmail.com> (http://stagnationlab.com/)",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.3.4",
+    "fbgraph": "^1.1.0",
     "glob": "^7.0.3",
+    "moment": "^2.12.0",
+    "request": "^2.69.0",
     "slackbots": "^0.5.1"
   },
   "devDependencies": {

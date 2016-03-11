@@ -39,8 +39,6 @@ export default class Bot extends SlackBot {
 		this.getHelpHandler().instance.handle({
 			text: 'help',
 			respond: (response) => {
-				console.log('SENDING', response);
-
 				this.postMessageToGroup('test', response, {
 					icon_url: this.config.picture // eslint-disable-line camelcase
 				});
@@ -49,7 +47,7 @@ export default class Bot extends SlackBot {
 	}
 
 	onMessage(info) {
-		console.log('message', info);
+		// console.log('message', info);
 
 		info.respond = (text, options = {}) => {
 			this.postMessage(info.channel, text, {
@@ -65,8 +63,12 @@ export default class Bot extends SlackBot {
 
 	handleMessage(message) {
 		this.handlers.forEach((handler) => {
-			if (handler.instance.match(message)) {
-				handler.instance.handle(message);
+			try {
+				if (handler.instance.match(message)) {
+					handler.instance.handle(message);
+				}
+			} catch (e) {
+				console.error(e);
 			}
 		});
 	}

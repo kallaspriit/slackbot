@@ -32,7 +32,11 @@ export default class CalculatorHandler extends BaseHandler {
 			const result = eval(message.text); // eslint-disable-line no-eval
 
 			// don't respond if calculated response is the same as input
-			if (message.text === result.toString() || typeof result !== 'number' || Number.isNaN(result)) {
+			if (
+				message.text === result.toString()
+				|| typeof result !== 'number'
+				|| Number.isNaN(result)
+			) {
 				return;
 			}
 
