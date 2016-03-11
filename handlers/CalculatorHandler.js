@@ -11,9 +11,11 @@ export default class CalculatorHandler extends BaseHandler {
 	}
 
 	match(message) {
-		const regexp = /^[0-9\+\-\*\/\^\(\)\.]{3,}$/;
+		const matchExpressionRegex = /^[0-9\+\-\*\/\^\(\)\.]{3,}$/;
+		const allNumbersRegex = /^[0-9]+$/;
 
-		if (!regexp.test(message.text)) {
+		// validate that only constains match expressions characters but is not all just numbers
+		if (!matchExpressionRegex.test(message.text) && !allNumbersRegex.test(message.text)) {
 			return false;
 		}
 
