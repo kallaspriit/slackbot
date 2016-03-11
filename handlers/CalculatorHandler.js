@@ -11,7 +11,7 @@ export default class CalculatorHandler extends BaseHandler {
 	}
 
 	match(message) {
-		const regexp = /^[0-9\+\-\*\/\^\(\)]{3,}$/;
+		const regexp = /^[0-9\+\-\*\/\^\(\)\.]{3,}$/;
 
 		if (!regexp.test(message.text)) {
 			return false;

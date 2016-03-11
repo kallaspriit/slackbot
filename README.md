@@ -16,8 +16,8 @@
 - `pm2 set pm2-logrotate:max_size 10M`
 - `pm2 set pm2-logrotate:retain 7`
 - `pm2 set pm2-logrotate:interval_unit DD`
-- `pm2 start bot.js --interpreter ./node_modules/.bin/babel-node`
 - `pm2 startup`
+- `pm2 start bot.js --interpreter ./node_modules/.bin/babel-node`
 - `pm2 save`
 
 ### PM2 helpful commands
