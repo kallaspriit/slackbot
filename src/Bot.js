@@ -1,4 +1,5 @@
 import SlackBot from 'slackbots';
+import path from 'path';
 import glob from 'glob';
 
 export default class Bot extends SlackBot {
@@ -10,10 +11,12 @@ export default class Bot extends SlackBot {
 		this.handlers = [];
 	}
 
+	static run(config) {
+		return (new Bot(config)).start();
+	}
+
 	start() {
 		this.handlers = this.loadHandlers();
-
-		console.log('handlers', this.handlers);
 
 		this
 			.on('open', this.onOpen.bind(this))
@@ -33,8 +36,15 @@ export default class Bot extends SlackBot {
 	onStart() {
 		console.log('started');
 
-		this.postMessageToGroup('test', 'hey!', {
-			icon_url: this.config.picture // eslint-disable-line camelcase
+		this.getHelpHandler().instance.handle({
+			text: 'help',
+			respond: (response) => {
+				console.log('SENDING', response);
+
+				this.postMessageToGroup('test', response, {
+					icon_url: this.config.picture // eslint-disable-line camelcase
+				});
+			}
 		});
 	}
 
@@ -62,17 +72,23 @@ export default class Bot extends SlackBot {
 	}
 
 	loadHandlers() {
-		const path = __dirname + '/../handlers/*.js';
+		const pattern = path.join(__dirname, '../handlers/*.js');
 
-		return glob.sync(path).map((filename) => {
+		return glob.sync(pattern).map((filename) => {
 			const handlerClass = require(filename);
-			const instance = new handlerClass.default(this); // eslint-disable-line;
+			const instance = new handlerClass.default(this); // eslint-disable-line
 
 			return {
 				filename: filename,
 				handlerClass: handlerClass,
 				instance
 			};
+		});
+	}
+
+	getHelpHandler() {
+		return this.handlers.find((handler) => {
+			return handler.filename.indexOf('HelpHandler') !== -1;
 		});
 	}
 
