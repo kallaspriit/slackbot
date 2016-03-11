@@ -15,7 +15,7 @@ export default class CalculatorHandler extends BaseHandler {
 		const allNumbersRegex = /^[0-9]+$/;
 
 		// validate that only constains match expressions characters but is not all just numbers
-		if (!matchExpressionRegex.test(message.text) && !allNumbersRegex.test(message.text)) {
+		if (!matchExpressionRegex.test(message.text) || allNumbersRegex.test(message.text)) {
 			return false;
 		}
 
