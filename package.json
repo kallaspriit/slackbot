@@ -1,0 +1,22 @@
+{
+  "name": "slackbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "bot": "babel-node bot"
+  },
+  "author": "Priit Kallas <kallaspriit@gmail.com> (http://stagnationlab.com/)",
+  "license": "ISC",
+  "dependencies": {
+    "glob": "^7.0.3",
+    "slackbots": "^0.5.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.5.1",
+    "babel-eslint": "^5.0.0",
+    "babel-preset-es2015": "^6.5.0",
+    "babel-preset-stage-0": "^6.5.0",
+    "eslint": "^2.2.0"
+  }
+}
