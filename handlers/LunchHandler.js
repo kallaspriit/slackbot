@@ -14,7 +14,16 @@ export default class CalculatorHandler extends BaseHandler {
 	}
 
 	match(message) {
-		return (/^lunch$/).test(message.text);
+		const regexpList = [
+			/^lunch$/i,
+			/mis .*lõunaks/i,
+			/mis .*söögiks/i,
+			/kuhu .*sööma/i,
+			/kuhu .*lõunale/i,
+			/nälg/i
+		];
+
+		return regexpList.find((regexp) => regexp.test(message.text)) ? true : false;
 	}
 
 	handle(message) {
