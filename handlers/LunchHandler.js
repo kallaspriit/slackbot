@@ -47,8 +47,6 @@ export default class CalculatorHandler extends BaseHandler {
 			.then((menus) => {
 				const responseLines = [];
 
-				console.log('got menus', menus);
-
 				menus.forEach((info, index) => {
 					const menuInfo = menuMap[index];
 
@@ -110,8 +108,6 @@ export default class CalculatorHandler extends BaseHandler {
 			'751390341596578',
 			(post) => {
 				const lines = post.message.split('\n');
-
-				console.log('check', post.message);
 
 				return lines.find((line) => {
 					return (/päevapakkumised/i).test(line);
