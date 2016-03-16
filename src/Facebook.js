@@ -16,7 +16,9 @@ export default class Facebook {
 
 				fb.get(userId + '/feed', (error, response) => {
 					if (error) {
-						reject(new Error(error));
+						console.error('fetching facebook feed failed', error);
+
+						reject(error);
 
 						return;
 					}
@@ -35,7 +37,9 @@ export default class Facebook {
 					+ appSecret + '&grant_type=client_credentials',
 				(error, response, body) => {
 					if (error) {
-						reject(new Error(error));
+						console.error('fetching facebook access token failed', error);
+
+						reject(error);
 
 						return;
 					}

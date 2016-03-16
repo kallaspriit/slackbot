@@ -18,8 +18,14 @@ export default class CalculatorHandler extends BaseHandler {
 			/^lunch$/i,
 			/mis .*lõunaks/i,
 			/mis .*söögiks/i,
+			/mis .*sööme/i,
+			/mida .*sööme/i,
 			/kuhu .*sööma/i,
 			/kuhu .*lõunale/i,
+			/lähme .*sööma/i,
+			/lähme .*lõunale/i,
+			/sööma\?/i,
+			/lõunale\?/i,
 			/nälg/i
 		];
 
@@ -30,20 +36,31 @@ export default class CalculatorHandler extends BaseHandler {
 		const menuMap = [{
 			name: 'Püssirohukelder',
 			source: this.getGunPowderCellarMenu.bind(this)
+		}, {
+			name: 'Sheriff',
+			source: this.getSheriffMenu.bind(this)
 		}];
 
-		Promise.any(
+		Promise.all(
 			menuMap.map((item) => item.source())
 		)
-			.then((...menus) => {
+			.then((menus) => {
 				const responseLines = [];
 
+				console.log('got menus', menus);
+
 				menus.forEach((info, index) => {
+					const menuInfo = menuMap[index];
+
 					if (!info) {
+						console.log('failed fetching menu #' + index);
+
+						responseLines.push(
+							(index + 1) + '. *' + menuInfo.name + ':* _getting information failed_'
+						);
+
 						return;
 					}
-
-					const menuInfo = menuMap[index];
 
 					responseLines.push(
 						(index + 1) + '. *' + menuInfo.name + ':* ' + info.items.join(', ')
@@ -59,42 +76,86 @@ export default class CalculatorHandler extends BaseHandler {
 	}
 	
 	getGunPowderCellarMenu() {
-		const facebook = new Facebook(
-			this.bot.config.facebook.id,
-			this.bot.config.facebook.secret
-		);
+		const menuItemRegexp = /^(\*)(.*)$/;
 
-		return facebook.getFeed('pyssirohukelder').then((data) => {
-			const menuItemRegexp = /^(\*)(.*)$/;
-			const menuPost = data.find((post) => {
+		return this.getFacebookMenu(
+			'pyssirohukelder',
+			(post) => {
 				const lines = post.message.split('\n');
 
 				return lines.find((line) => {
 					return menuItemRegexp.test(line);
 				});
-			}) || null;
+			},
+			(post) => {
+				return post.message
+					.split('\n')
+					.reduce((list, line) => {
+						const matches = menuItemRegexp.exec(line);
 
-			if (!menuPost) {
-				return null;
+						if (!matches) {
+							return list;
+						}
+
+						list.push(matches[2]);
+
+						return list;
+					}, []);
 			}
+		);
+	}
 
-			const items = menuPost.message.split('\n').reduce((list, line) => {
-				const matches = menuItemRegexp.exec(line);
+	getSheriffMenu() {
+		return this.getFacebookMenu(
+			'751390341596578',
+			(post) => {
+				const lines = post.message.split('\n');
 
-				if (!matches) {
-					return list;
+				console.log('check', post.message);
+
+				return lines.find((line) => {
+					return (/päevapakkumised/i).test(line);
+				});
+			},
+			(post) => {
+				return post.message
+					.split('\n')
+					.reduce((list, line, index) => {
+						if (index > 0) {
+							list.push(line);
+						}
+
+						return list;
+					}, []);
+			}
+		);
+	}
+
+	getFacebookMenu(userId, postMatcherFn, menuExtracterFn) {
+		const facebook = new Facebook(
+			this.bot.config.facebook.id,
+			this.bot.config.facebook.secret
+		);
+
+		return facebook.getFeed(userId)
+			.then((data) => {
+				const post = data.find(postMatcherFn) || null;
+
+				if (!post) {
+					return null;
 				}
 
-				list.push(matches[2]);
+				const items = menuExtracterFn(post);
+				const date = new Date(post.created_time);
 
-				return list;
-			}, []);
-			
-			return {
-				items: items,
-				date: new Date(menuPost.created_time),
-				post: menuPost
-			};
-		});
+				return {
+					items,
+					date,
+					post
+				};
+			})
+			.catch((error) => {
+				console.error('fetching menu for "' + userId + '" failed: ' + error.message);
+			});
 	}
 }
