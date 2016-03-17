@@ -45,28 +45,22 @@ export default class CalculatorHandler extends BaseHandler {
 			menuMap.map((item) => item.source())
 		)
 			.then((menus) => {
-				const responseLines = [];
-
 				menus.forEach((info, index) => {
 					const menuInfo = menuMap[index];
 
 					if (!info) {
 						console.log('failed fetching menu #' + index);
 
-						responseLines.push(
-							(index + 1) + '. *' + menuInfo.name + ':* _getting information failed_'
-						);
+						message.respond((index + 1) + '. *' + menuInfo.name + ':* _getting information failed_');
 
 						return;
 					}
 
-					responseLines.push(
-						(index + 1) + '. *' + menuInfo.name + ':* ' + info.items.join(', ')
+					message.respond(
+						'*' + menuInfo.name + ':* ' + info.items.join(', ')
 						+ ' (' + moment(info.date).fromNow() + ')'
 					);
 				});
-
-				message.respond(responseLines.join('\n'));
 			})
 			.catch((error) => {
 				message.respond(error.message);
