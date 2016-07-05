@@ -3,7 +3,7 @@ import BaseHandler from '../src/BaseHandler';
 import Facebook from '../src/Facebook';
 import moment from 'moment';
 
-export default class CalculatorHandler extends BaseHandler {
+export default class LunchHandler extends BaseHandler {
 
 	getDescription() {
 		return 'lunch: displays today\'s lunch menus';
