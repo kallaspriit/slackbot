@@ -2,6 +2,16 @@ import Promise from 'bluebird';
 import BaseHandler from '../src/BaseHandler';
 import Facebook from '../src/Facebook';
 import moment from 'moment';
+import http from 'http';
+import cheerio from 'cheerio';
+import htmlToText from 'html-to-text';
+
+const optionsPaevapraed = {
+	host: 'www.paevapraed.com',
+	port: 80,
+	path: '/',
+	method: 'POST'
+};
 
 export default class LunchHandler extends BaseHandler {
 
@@ -39,6 +49,15 @@ export default class LunchHandler extends BaseHandler {
 		}, {
 			name: 'Sheriff',
 			source: this.getSheriffMenu.bind(this)
+		}, {
+			name: 'Hot Pot',
+			source: this.getHotPotMenu.bind(this)
+		}, {
+			name: 'Pahad poisid',
+			source: this.getPahadPoisidMenu.bind(this)
+		}, {
+			name: 'Ülikooli kohvik',
+			source: this.getUTMenu.bind(this)
 		}];
 
 		Promise.all(
@@ -57,7 +76,7 @@ export default class LunchHandler extends BaseHandler {
 					}
 
 					message.respond(
-						'*' + menuInfo.name + ':* ' + info.items.join(', ')
+						'*' + menuInfo.name + ':* ' + info.items.join('; ')
 						+ ' (' + moment(info.date).fromNow() + ')'
 					);
 				});
@@ -119,6 +138,89 @@ export default class LunchHandler extends BaseHandler {
 					}, []);
 			}
 		);
+	}
+
+	getHotPotMenu() {
+		return new Promise((resolve, reject) => {
+			http.request(optionsPaevapraed, (res) => {
+				let item = '';
+
+				res.setEncoding('utf8');
+				res.on('data', (chunk) => {
+					const $ = cheerio.load(chunk);
+					const chunkHtml = $('#HOTPOT_FOOD').html();
+
+					if (chunkHtml) {
+						item += chunkHtml;
+					}
+				});
+				res.on('end', () => {
+					const itemText = htmlToText.fromString(item);
+					const items = itemText.split('\n');
+					const itemsList = items.length > 2 ? [items[2], items[5], items[8], items[11]] : [items[0]];
+
+					resolve({ items: itemsList });
+				});
+				res.on('error', (err) => reject(err));
+			}).end();
+		});
+	}
+
+	getPahadPoisidMenu() {
+		return new Promise((resolve, reject) => {
+			http.request(optionsPaevapraed, (res) => {
+				let item = '';
+
+				res.setEncoding('utf8');
+				res.on('data', (chunk) => {
+					const $ = cheerio.load(chunk);
+					const chunkHtml = $('#PAHADPOISID_FOOD').html();
+
+					if (chunkHtml) {
+						item += chunkHtml;
+					}
+				});
+				res.on('end', () => {
+					const itemText = htmlToText.fromString(item);
+					const items = itemText.split('\n');
+
+					if (items.length > 2) {
+						items.pop();
+						items.pop();
+					}
+					resolve({ items: items });
+				});
+				res.on('error', (err) => reject(err));
+			}).end();
+		});
+	}
+
+	getUTMenu() {
+		return new Promise((resolve, reject) => {
+			http.request(optionsPaevapraed, (res) => {
+				let item = '';
+
+				res.setEncoding('utf8');
+				res.on('data', (chunk) => {
+					const $ = cheerio.load(chunk);
+					const chunkHtml = $('#UT_FOOD').html();
+
+					if (chunkHtml) {
+						item += chunkHtml;
+					}
+				});
+				res.on('end', () => {
+					const itemText = htmlToText.fromString(item);
+					const items = itemText.split('\n');
+
+					if (items.length > 2) {
+						items.pop();
+					}
+					resolve({ items: items });
+				});
+				res.on('error', (err) => reject(err));
+			}).end();
+		});
 	}
 
 	getFacebookMenu(userId, postMatcherFn, menuExtracterFn) {
