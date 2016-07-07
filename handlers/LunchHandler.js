@@ -6,7 +6,7 @@ import http from 'http';
 import cheerio from 'cheerio';
 import htmlToText from 'html-to-text';
 
-const optionsPaevapraed = {
+const dailySpecialOptions = {
 	host: 'www.paevapraed.com',
 	port: 80,
 	path: '/',
@@ -141,83 +141,54 @@ export default class LunchHandler extends BaseHandler {
 	}
 
 	getHotPotMenu() {
-		return new Promise((resolve, reject) => {
-			http.request(optionsPaevapraed, (res) => {
-				let item = '';
+		return this.getDailySpecialOffers('#HOTPOT_FOOD', (item) => {
+			const itemText = htmlToText.fromString(item);
+			const lines = itemText.split('\n');
 
-				res.setEncoding('utf8');
-				res.on('data', (chunk) => {
-					const $ = cheerio.load(chunk);
-					const chunkHtml = $('#HOTPOT_FOOD').html();
-
-					if (chunkHtml) {
-						item += chunkHtml;
-					}
-				});
-				res.on('end', () => {
-					const itemText = htmlToText.fromString(item);
-					const items = itemText.split('\n');
-					const itemsList = items.length > 2 ? [items[2], items[5], items[8], items[11]] : [items[0]];
-
-					resolve({ items: itemsList });
-				});
-				res.on('error', (err) => reject(err));
-			}).end();
+			return ({ items: lines.length > 2 ? lines.reduce(this.hotPotMenuFilter, []) : [lines[0]] });
 		});
 	}
 
+	hotPotMenuFilter(total, line, index) {
+		if ((index + 1) % 3 === 0) {
+			total.push(line);
+		}
+		return total;
+	}
+
 	getPahadPoisidMenu() {
-		return new Promise((resolve, reject) => {
-			http.request(optionsPaevapraed, (res) => {
-				let item = '';
+		return this.getDailySpecialOffers('#PAHADPOISID_FOOD', (item) => {
+			const itemText = htmlToText.fromString(item);
+			const lines = itemText.split('\n');
 
-				res.setEncoding('utf8');
-				res.on('data', (chunk) => {
-					const $ = cheerio.load(chunk);
-					const chunkHtml = $('#PAHADPOISID_FOOD').html();
-
-					if (chunkHtml) {
-						item += chunkHtml;
-					}
-				});
-				res.on('end', () => {
-					const itemText = htmlToText.fromString(item);
-					const items = itemText.split('\n');
-
-					if (items.length > 2) {
-						items.pop();
-						items.pop();
-					}
-					resolve({ items: items });
-				});
-				res.on('error', (err) => reject(err));
-			}).end();
+			return ({ items: lines.length > 1 ? lines.slice(0, -2) : [lines[0]] });
 		});
 	}
 
 	getUTMenu() {
+		return this.getDailySpecialOffers('#UT_FOOD', (item) => {
+			const itemText = htmlToText.fromString(item);
+			const lines = itemText.split('\n');
+
+			return ({ items: lines.length > 1 ? lines.slice(0, -1) : [lines[0]] });
+		});
+	}
+
+	getDailySpecialOffers(name, itemsCallback) {
 		return new Promise((resolve, reject) => {
-			http.request(optionsPaevapraed, (res) => {
+			http.request(dailySpecialOptions, (res) => {
 				let item = '';
 
 				res.setEncoding('utf8');
 				res.on('data', (chunk) => {
 					const $ = cheerio.load(chunk);
-					const chunkHtml = $('#UT_FOOD').html();
+					const chunkHtml = $(name).html();
 
-					if (chunkHtml) {
+					if (chunkHtml !== null) {
 						item += chunkHtml;
 					}
 				});
-				res.on('end', () => {
-					const itemText = htmlToText.fromString(item);
-					const items = itemText.split('\n');
-
-					if (items.length > 2) {
-						items.pop();
-					}
-					resolve({ items: items });
-				});
+				res.on('end', () => resolve(itemsCallback(item)));
 				res.on('error', (err) => reject(err));
 			}).end();
 		});
