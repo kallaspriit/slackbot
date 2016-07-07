@@ -6,13 +6,6 @@ import http from 'http';
 import cheerio from 'cheerio';
 import htmlToText from 'html-to-text';
 
-const dailySpecialOptions = {
-	host: 'www.paevapraed.com',
-	port: 80,
-	path: '/',
-	method: 'POST'
-};
-
 export default class LunchHandler extends BaseHandler {
 
 	getDescription() {
@@ -54,10 +47,10 @@ export default class LunchHandler extends BaseHandler {
 			source: this.getHotPotMenu.bind(this)
 		}, {
 			name: 'Pahad poisid',
-			source: this.getPahadPoisidMenu.bind(this)
+			source: this.getBadBoysMenu.bind(this)
 		}, {
 			name: 'Ülikooli kohvik',
-			source: this.getUTMenu.bind(this)
+			source: this.getTartuUniversityMenu.bind(this)
 		}];
 
 		Promise.all(
@@ -75,14 +68,17 @@ export default class LunchHandler extends BaseHandler {
 						return;
 					}
 
-					message.respond(
-						'*' + menuInfo.name + ':* ' + info.items.join('; ')
-						+ ' (' + moment(info.date).fromNow() + ')'
-					);
+					let response = '*' + menuInfo.name + ':* ' + info.items.join('; ');
+
+					if (info.date instanceof Date) {
+						response += ' (' + moment(info.date).fromNow() + ')';
+					}
+
+					message.respond(response);
 				});
 			})
 			.catch((error) => {
-				message.respond(error.message);
+				message.respond(error.stack.toString());
 			});
 	}
 	
@@ -141,40 +137,50 @@ export default class LunchHandler extends BaseHandler {
 	}
 
 	getHotPotMenu() {
-		return this.getDailySpecialOffers('#HOTPOT_FOOD', (item) => {
-			const itemText = htmlToText.fromString(item);
+		return this.getDailySpecialOffers('#HOTPOT_FOOD', (html) => {
+			const itemText = htmlToText.fromString(html);
 			const lines = itemText.split('\n');
 
-			return ({ items: lines.length > 2 ? lines.reduce(this.hotPotMenuFilter, []) : [lines[0]] });
+			if (lines.length > 2) {
+				return lines.reduce((filteredLines, line, index) => {
+					if ((index + 1) % 3 === 0) {
+						filteredLines.push(line);
+					}
+
+					return filteredLines;
+				}, []);
+			}
+
+			return [lines[0]];
 		});
 	}
 
-	hotPotMenuFilter(total, line, index) {
-		if ((index + 1) % 3 === 0) {
-			total.push(line);
-		}
-		return total;
-	}
-
-	getPahadPoisidMenu() {
-		return this.getDailySpecialOffers('#PAHADPOISID_FOOD', (item) => {
-			const itemText = htmlToText.fromString(item);
+	getBadBoysMenu() {
+		return this.getDailySpecialOffers('#PAHADPOISID_FOOD', (html) => {
+			const itemText = htmlToText.fromString(html);
 			const lines = itemText.split('\n');
 
-			return ({ items: lines.length > 1 ? lines.slice(0, -2) : [lines[0]] });
+			return lines.length > 1 ? lines.slice(0, -2) : [lines[0]];
 		});
 	}
 
-	getUTMenu() {
-		return this.getDailySpecialOffers('#UT_FOOD', (item) => {
-			const itemText = htmlToText.fromString(item);
+	getTartuUniversityMenu() {
+		return this.getDailySpecialOffers('#UT_FOOD', (html) => {
+			const itemText = htmlToText.fromString(html);
 			const lines = itemText.split('\n');
 
-			return ({ items: lines.length > 1 ? lines.slice(0, -1) : [lines[0]] });
+			return lines.length > 1 ? lines.slice(0, -1) : [lines[0]];
 		});
 	}
 
-	getDailySpecialOffers(name, itemsCallback) {
+	getDailySpecialOffers(name, htmlToItemsConverter) {
+		const dailySpecialOptions = {
+			host: 'www.paevapraed.com',
+			port: 80,
+			path: '/',
+			method: 'POST'
+		};
+
 		return new Promise((resolve, reject) => {
 			http.request(dailySpecialOptions, (res) => {
 				let item = '';
@@ -188,7 +194,14 @@ export default class LunchHandler extends BaseHandler {
 						item += chunkHtml;
 					}
 				});
-				res.on('end', () => resolve(itemsCallback(item)));
+				res.on('end', () => {
+					const items = htmlToItemsConverter(item);
+
+					resolve({
+						items: items,
+						date: null
+					});
+				});
 				res.on('error', (err) => reject(err));
 			}).end();
 		});
