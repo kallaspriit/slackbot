@@ -2,6 +2,16 @@ import Promise from 'bluebird';
 import BaseHandler from '../src/BaseHandler';
 import Facebook from '../src/Facebook';
 import moment from 'moment';
+import http from 'http';
+import cheerio from 'cheerio';
+import htmlToText from 'html-to-text';
+
+const dailySpecialOptions = {
+	host: 'www.paevapraed.com',
+	port: 80,
+	path: '/',
+	method: 'POST'
+};
 
 export default class LunchHandler extends BaseHandler {
 
@@ -39,6 +49,15 @@ export default class LunchHandler extends BaseHandler {
 		}, {
 			name: 'Sheriff',
 			source: this.getSheriffMenu.bind(this)
+		}, {
+			name: 'Hot Pot',
+			source: this.getHotPotMenu.bind(this)
+		}, {
+			name: 'Pahad poisid',
+			source: this.getPahadPoisidMenu.bind(this)
+		}, {
+			name: 'Ülikooli kohvik',
+			source: this.getUTMenu.bind(this)
 		}];
 
 		Promise.all(
@@ -57,7 +76,7 @@ export default class LunchHandler extends BaseHandler {
 					}
 
 					message.respond(
-						'*' + menuInfo.name + ':* ' + info.items.join(', ')
+						'*' + menuInfo.name + ':* ' + info.items.join('; ')
 						+ ' (' + moment(info.date).fromNow() + ')'
 					);
 				});
@@ -119,6 +138,60 @@ export default class LunchHandler extends BaseHandler {
 					}, []);
 			}
 		);
+	}
+
+	getHotPotMenu() {
+		return this.getDailySpecialOffers('#HOTPOT_FOOD', (item) => {
+			const itemText = htmlToText.fromString(item);
+			const lines = itemText.split('\n');
+
+			return ({ items: lines.length > 2 ? lines.reduce(this.hotPotMenuFilter, []) : [lines[0]] });
+		});
+	}
+
+	hotPotMenuFilter(total, line, index) {
+		if ((index + 1) % 3 === 0) {
+			total.push(line);
+		}
+		return total;
+	}
+
+	getPahadPoisidMenu() {
+		return this.getDailySpecialOffers('#PAHADPOISID_FOOD', (item) => {
+			const itemText = htmlToText.fromString(item);
+			const lines = itemText.split('\n');
+
+			return ({ items: lines.length > 1 ? lines.slice(0, -2) : [lines[0]] });
+		});
+	}
+
+	getUTMenu() {
+		return this.getDailySpecialOffers('#UT_FOOD', (item) => {
+			const itemText = htmlToText.fromString(item);
+			const lines = itemText.split('\n');
+
+			return ({ items: lines.length > 1 ? lines.slice(0, -1) : [lines[0]] });
+		});
+	}
+
+	getDailySpecialOffers(name, itemsCallback) {
+		return new Promise((resolve, reject) => {
+			http.request(dailySpecialOptions, (res) => {
+				let item = '';
+
+				res.setEncoding('utf8');
+				res.on('data', (chunk) => {
+					const $ = cheerio.load(chunk);
+					const chunkHtml = $(name).html();
+
+					if (chunkHtml !== null) {
+						item += chunkHtml;
+					}
+				});
+				res.on('end', () => resolve(itemsCallback(item)));
+				res.on('error', (err) => reject(err));
+			}).end();
+		});
 	}
 
 	getFacebookMenu(userId, postMatcherFn, menuExtracterFn) {
