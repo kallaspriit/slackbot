@@ -51,6 +51,9 @@ export default class LunchHandler extends BaseHandler {
 		}, {
 			name: 'Ülikooli kohvik',
 			source: this.getTartuUniversityMenu.bind(this)
+		}, {
+			name: 'Vilde',
+			source: this.getVildeMenu.bind(this)
 		}];
 
 		Promise.all(
@@ -81,7 +84,7 @@ export default class LunchHandler extends BaseHandler {
 				message.respond(error.stack.toString());
 			});
 	}
-	
+
 	getGunPowderCellarMenu() {
 		const menuItemRegexp = /^(\*)(.*)$/;
 
@@ -160,7 +163,7 @@ export default class LunchHandler extends BaseHandler {
 			const itemText = htmlToText.fromString(html);
 			const lines = itemText.split('\n');
 
-			return lines.length > 1 ? lines.slice(0, -2) : [lines[0]];
+			return lines.length > 2 ? lines.slice(0, -2) : [lines[0]];
 		});
 	}
 
@@ -170,6 +173,15 @@ export default class LunchHandler extends BaseHandler {
 			const lines = itemText.split('\n');
 
 			return lines.length > 1 ? lines.slice(0, -1) : [lines[0]];
+		});
+	}
+
+	getVildeMenu() {
+		return this.getDailySpecialOffers('#VILDE_FOOD', (html) => {
+			const itemText = htmlToText.fromString(html);
+			const lines = itemText.split('\n');
+
+			return lines;
 		});
 	}
 
