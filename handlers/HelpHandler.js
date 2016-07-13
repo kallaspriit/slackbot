@@ -28,11 +28,7 @@ export default class HelpHandler extends BaseHandler {
 		const handlerNumber = Number.parseInt(commandName, 10);
 		let handler = null;
 
-		if (!Number.isNaN(handlerNumber)) {
-			const handlerIndex = handlerNumber - 1;
-
-			handler = this.bot.handlers[handlerIndex] || null;
-		} else {
+		if (Number.isNaN(handlerNumber)) {
 			handler = this.bot.handlers.find((handlerInfo) => {
 				const name1 = handlerInfo.instance.getDescription().substr(0, commandName.length).toLowerCase();
 				const name2 = commandName.toLowerCase();
@@ -41,6 +37,10 @@ export default class HelpHandler extends BaseHandler {
 
 				return name1 === name2;
 			}) || null;
+		} else {
+			const handlerIndex = handlerNumber - 1;
+
+			handler = this.bot.handlers[handlerIndex] || null;
 		}
 
 		if (!handler) {
