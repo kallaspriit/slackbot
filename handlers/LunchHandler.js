@@ -160,7 +160,9 @@ export default class LunchHandler extends BaseHandler {
 
 	getBadBoysMenu() {
 		return this.getDailySpecialOffers('#PAHADPOISID_FOOD', (html) => {
-			const itemText = htmlToText.fromString(html);
+			const itemText = htmlToText.fromString(html, {
+				wordwrap: 1000
+			});
 			const lines = itemText.split('\n');
 
 			return lines.length > 2 ? lines.slice(0, -2) : [lines[0]];
@@ -169,7 +171,9 @@ export default class LunchHandler extends BaseHandler {
 
 	getTartuUniversityMenu() {
 		return this.getDailySpecialOffers('#UT_FOOD', (html) => {
-			const itemText = htmlToText.fromString(html);
+			const itemText = htmlToText.fromString(html, {
+				wordwrap: 1000
+			});
 			const lines = itemText.split('\n');
 
 			return lines.length > 1 ? lines.slice(0, -1) : [lines[0]];
@@ -178,7 +182,9 @@ export default class LunchHandler extends BaseHandler {
 
 	getVildeMenu() {
 		return this.getDailySpecialOffers('#VILDE_FOOD', (html) => {
-			const itemText = htmlToText.fromString(html);
+			const itemText = htmlToText.fromString(html, {
+				wordwrap: 1000
+			});
 			const lines = itemText.split('\n');
 
 			return lines;
