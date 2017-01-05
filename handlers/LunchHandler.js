@@ -43,21 +43,15 @@ export default class LunchHandler extends BaseHandler {
 			name: 'Sheriff',
 			source: this.getSheriffMenu.bind(this)
 		}, {
-			name: 'Hot Pot',
-			source: this.getHotPotMenu.bind(this)
-		}, {
-			name: 'Pahad poisid',
-			source: this.getBadBoysMenu.bind(this)
-		}, {
-			name: 'Ülikooli kohvik',
-			source: this.getTartuUniversityMenu.bind(this)
-		}, {
 			name: 'Vilde',
 			source: this.getVildeMenu.bind(this)
+		}, {
+			name: 'La Dolce Vita',
+			source: this.getDolceMenue.bind(this)
 		}];
 
 		Promise.all(
-			menuMap.map((item) => item.source())
+			menuMap.map((item) => item.source().catch(() => Promise.resolve(null)))
 		)
 			.then((menus) => {
 				menus.forEach((info, index) => {
@@ -66,7 +60,7 @@ export default class LunchHandler extends BaseHandler {
 					if (!info) {
 						console.log('failed fetching menu #' + index);
 
-						message.respond((index + 1) + '. *' + menuInfo.name + ':* _getting information failed_');
+						message.respond('*' + menuInfo.name + ':* _getting information failed_');
 
 						return;
 					}
@@ -139,49 +133,8 @@ export default class LunchHandler extends BaseHandler {
 		);
 	}
 
-	getHotPotMenu() {
-		return this.getDailySpecialOffers('#HOTPOT_FOOD', (html) => {
-			const itemText = htmlToText.fromString(html);
-			const lines = itemText.split('\n');
-
-			if (lines.length > 2) {
-				return lines.reduce((filteredLines, line, index) => {
-					if ((index + 1) % 3 === 0) {
-						filteredLines.push(line);
-					}
-
-					return filteredLines;
-				}, []);
-			}
-
-			return [lines[0]];
-		});
-	}
-
-	getBadBoysMenu() {
-		return this.getDailySpecialOffers('#PAHADPOISID_FOOD', (html) => {
-			const itemText = htmlToText.fromString(html, {
-				wordwrap: 1000
-			});
-			const lines = itemText.split('\n');
-
-			return lines.length > 2 ? lines.slice(0, -2) : [lines[0]];
-		});
-	}
-
-	getTartuUniversityMenu() {
-		return this.getDailySpecialOffers('#UT_FOOD', (html) => {
-			const itemText = htmlToText.fromString(html, {
-				wordwrap: 1000
-			});
-			const lines = itemText.split('\n');
-
-			return lines.length > 1 ? lines.slice(0, -1) : [lines[0]];
-		});
-	}
-
 	getVildeMenu() {
-		return this.getDailySpecialOffers('#VILDE_FOOD', (html) => {
+		return this.getDailySpecialOffers('#VILDE_FOOD', 0, (html) => {
 			const itemText = htmlToText.fromString(html, {
 				wordwrap: 1000
 			});
@@ -191,22 +144,42 @@ export default class LunchHandler extends BaseHandler {
 		});
 	}
 
-	getDailySpecialOffers(name, htmlToItemsConverter) {
-		const dailySpecialOptions = {
+	getDolceMenue() {
+		return this.getDailySpecialOffers('.name', 1, (html) => {
+			const itemText = htmlToText.fromString(html, {
+				wordwrap: 1000
+			});
+			const lines = itemText.split('.');
+
+			return lines;
+		});
+	}
+
+	getDailySpecialOffers(name, isPaevaPraad, htmlToItemsConverter) {
+		let dailySpecialOptions = {
 			host: 'www.paevapraed.com',
 			port: 80,
 			path: '/',
 			method: 'POST'
 		};
 
+		if (isPaevaPraad) {
+			dailySpecialOptions = {
+				host: 'www.paevapraad.ee',
+				port: 80,
+				path: '/tartu/la-dolce-vita',
+				method: 'GET'
+			};
+		}
+
 		return new Promise((resolve, reject) => {
-			http.request(dailySpecialOptions, (res) => {
+			const req = http.request(dailySpecialOptions, (res) => {
 				let item = '';
 
 				res.setEncoding('utf8');
 				res.on('data', (chunk) => {
 					const $ = cheerio.load(chunk);
-					const chunkHtml = $(name).html();
+					const chunkHtml = $(name);
 
 					if (chunkHtml !== null) {
 						item += chunkHtml;
@@ -220,8 +193,10 @@ export default class LunchHandler extends BaseHandler {
 						date: null
 					});
 				});
-				res.on('error', (err) => reject(err));
-			}).end();
+			});
+
+			req.on('error', (err) => reject(err));
+			req.end();
 		});
 	}
 
