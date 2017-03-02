@@ -3,6 +3,7 @@ import BaseHandler from '../src/BaseHandler';
 import Facebook from '../src/Facebook';
 import moment from 'moment';
 import http from 'http';
+import https from 'https';
 import cheerio from 'cheerio';
 import htmlToText from 'html-to-text';
 
@@ -149,9 +150,8 @@ export default class LunchHandler extends BaseHandler {
 			const itemText = htmlToText.fromString(html, {
 				wordwrap: 1000
 			});
-			const lines = itemText.split('.');
 
-			return lines;
+			return itemText.split('.');
 		});
 	}
 
@@ -162,18 +162,20 @@ export default class LunchHandler extends BaseHandler {
 			path: '/',
 			method: 'POST'
 		};
+		let httpMethod = http;
 
 		if (isPaevaPraad) {
 			dailySpecialOptions = {
 				host: 'www.paevapraad.ee',
-				port: 80,
+				port: 443,
 				path: '/tartu/la-dolce-vita',
 				method: 'GET'
 			};
+			httpMethod = https;
 		}
 
 		return new Promise((resolve, reject) => {
-			const req = http.request(dailySpecialOptions, (res) => {
+			const req = httpMethod.request(dailySpecialOptions, (res) => {
 				let item = '';
 
 				res.setEncoding('utf8');
