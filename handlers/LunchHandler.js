@@ -2,7 +2,6 @@ import Promise from 'bluebird';
 import BaseHandler from '../src/BaseHandler';
 import Facebook from '../src/Facebook';
 import moment from 'moment';
-import http from 'http';
 import https from 'https';
 import cheerio from 'cheerio';
 import htmlToText from 'html-to-text';
@@ -43,9 +42,6 @@ export default class LunchHandler extends BaseHandler {
 		}, {
 			name: 'Sheriff',
 			source: this.getSheriffMenu.bind(this)
-		}, {
-			name: 'Vilde',
-			source: this.getVildeMenu.bind(this)
 		}, {
 			name: 'La Dolce Vita',
 			source: this.getDolceMenue.bind(this)
@@ -134,19 +130,8 @@ export default class LunchHandler extends BaseHandler {
 		);
 	}
 
-	getVildeMenu() {
-		return this.getDailySpecialOffers('#VILDE_FOOD', 0, (html) => {
-			const itemText = htmlToText.fromString(html, {
-				wordwrap: 1000
-			});
-			const lines = itemText.split('\n');
-
-			return lines;
-		});
-	}
-
 	getDolceMenue() {
-		return this.getDailySpecialOffers('.name', 1, (html) => {
+		return this.getDailySpecialOffers('.name', (html) => {
 			const itemText = htmlToText.fromString(html, {
 				wordwrap: 1000
 			});
@@ -155,27 +140,16 @@ export default class LunchHandler extends BaseHandler {
 		});
 	}
 
-	getDailySpecialOffers(name, isPaevaPraad, htmlToItemsConverter) {
-		let dailySpecialOptions = {
-			host: 'www.paevapraed.com',
-			port: 80,
-			path: '/',
-			method: 'POST'
+	getDailySpecialOffers(name, htmlToItemsConverter) {
+		const dailySpecialOptions = {
+			host: 'www.paevapraad.ee',
+			port: 443,
+			path: '/tartu/la-dolce-vita',
+			method: 'GET'
 		};
-		let httpMethod = http;
-
-		if (isPaevaPraad) {
-			dailySpecialOptions = {
-				host: 'www.paevapraad.ee',
-				port: 443,
-				path: '/tartu/la-dolce-vita',
-				method: 'GET'
-			};
-			httpMethod = https;
-		}
 
 		return new Promise((resolve, reject) => {
-			const req = httpMethod.request(dailySpecialOptions, (res) => {
+			const req = https.request(dailySpecialOptions, (res) => {
 				let item = '';
 
 				res.setEncoding('utf8');
