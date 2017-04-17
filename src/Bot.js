@@ -2,23 +2,52 @@ import SlackBot from 'slackbots';
 import path from 'path';
 import glob from 'glob';
 
-export default class Bot extends SlackBot {
+/*
+class Base {
+	constructor(config) {
+		console.log('Base constructor', config);
+	}
+}
+
+export default class Child extends Base {
 
 	constructor(config) {
 		super(config);
 
+		console.log('Child constructor', config);
+	}
+
+	static run(config) {
+		const bot = new Child(config);
+
+		bot.start();
+	}
+
+	start() {
+		console.log('start..');
+	}
+
+}
+*/
+
+export default class Bot {
+
+	constructor(config) {
+		this.bot = new SlackBot(config);
 		this.config = config;
 		this.handlers = [];
 	}
 
 	static run(config) {
-		return (new Bot(config)).start();
+		const bot = new Bot(config);
+
+		bot.start();
 	}
 
 	start() {
 		this.handlers = this.loadHandlers();
 
-		this
+		this.bot
 			.on('open', this.onOpen.bind(this))
 			.on('close', this.onClose.bind(this))
 			.on('start', this.onStart.bind(this))
@@ -39,7 +68,7 @@ export default class Bot extends SlackBot {
 		this.getHelpHandler().instance.handle({
 			text: 'help',
 			respond: (response) => {
-				this.postMessageToGroup('test', response, {
+				this.bot.postMessageToGroup('test', response, {
 					icon_url: this.config.picture // eslint-disable-line camelcase
 				});
 			}
@@ -50,7 +79,7 @@ export default class Bot extends SlackBot {
 		// console.log('message', info);
 
 		info.respond = (text, options = {}) => {
-			this.postMessage(info.channel, text, {
+			this.bot.postMessage(info.channel, text, {
 				icon_url: this.config.picture,  // eslint-disable-line camelcase
 				...options
 			});

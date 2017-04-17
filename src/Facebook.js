@@ -3,12 +3,12 @@ import Promise from 'bluebird';
 import request from 'request';
 
 export default class Facebook {
-	
+
 	constructor(appId, appSecret) {
 		this.appId = appId;
 		this.appSecret = appSecret;
 	}
-	
+
 	getFeed(userId) {
 		return this.getAccessToken(this.appId, this.appSecret).then((token) => {
 			return new Promise((resolve, reject) => {
@@ -50,10 +50,12 @@ export default class Facebook {
 						return;
 					}
 
-					resolve(body.split('=')[1]);
+					const accessToken = JSON.parse(body).access_token;
+
+					resolve(accessToken);
 				}
 			);
 		});
 	}
-	
+
 }

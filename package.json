@@ -10,21 +10,21 @@
   "author": "Priit Kallas <kallaspriit@gmail.com> (http://stagnationlab.com/)",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^3.3.4",
-    "cheerio": "^0.20.0",
+    "bluebird": "^3.5.0",
+    "cheerio": "^0.22.0",
     "estraverse-fb": "^1.3.1",
-    "fbgraph": "^1.1.0",
-    "glob": "^7.0.3",
-    "html-to-text": "^2.1.3",
-    "moment": "^2.12.0",
-    "request": "^2.69.0",
-    "slackbots": "^0.5.1"
+    "fbgraph": "^1.4.1",
+    "glob": "^7.1.1",
+    "html-to-text": "^3.2.0",
+    "moment": "^2.18.1",
+    "request": "^2.81.0",
+    "slackbots": "^1.0.2"
   },
   "devDependencies": {
-    "babel-cli": "^6.5.1",
-    "babel-eslint": "^5.0.0",
-    "babel-preset-es2015": "^6.5.0",
-    "babel-preset-stage-0": "^6.5.0",
-    "eslint": "^2.2.0"
+    "babel-cli": "^6.24.1",
+    "babel-eslint": "^7.2.2",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "eslint": "^3.19.0"
   }
 }
