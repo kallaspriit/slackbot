@@ -7,237 +7,266 @@ import cheerio from "cheerio";
 import htmlToText from "html-to-text";
 
 export default class LunchHandler extends BaseHandler {
-	getDescription() {
-		return "lunch: displays today's lunch menus";
-	}
+  getDescription() {
+    return "lunch: displays today's lunch menus";
+  }
 
-	getHelp() {
-		return "*lunch* fetches menus for supported venues.";
-	}
+  getHelp() {
+    return "*lunch* fetches menus for supported venues.";
+  }
 
-	match(message) {
-		const regexpList = [
-			/^lunch$/i,
-			/mis .*lõunaks/i,
-			/mis .*söögiks/i,
-			/mis .*sööme/i,
-			/mida .*sööme/i,
-			/kuhu .*sööma/i,
-			/kuhu .*lõunale/i,
-			/lähme .*sööma/i,
-			/lähme .*lõunale/i,
-			/sööma\?/i,
-			/lõunale\?/i,
-			/nälg/i
-		];
+  match(message) {
+    const regexpList = [
+      /^lunch$/i,
+      /mis .*lõunaks/i,
+      /mis .*söögiks/i,
+      /mis .*sööme/i,
+      /mida .*sööme/i,
+      /kuhu .*sööma/i,
+      /kuhu .*lõunale/i,
+      /lähme .*sööma/i,
+      /lähme .*lõunale/i,
+      /sööma\?/i,
+      /lõunale\?/i,
+      /nälg/i
+    ];
 
-		return regexpList.find(regexp => regexp.test(message.text)) ? true : false;
-	}
+    return regexpList.find(regexp => regexp.test(message.text)) ? true : false;
+  }
 
-	handle(message) {
-		const menuMap = [
-			{
-				name: "Püssirohukelder",
-				source: this.getGunPowderCellarMenu.bind(this)
-			},
-			{
-				name: "Sheriff",
-				source: this.getSheriffMenu.bind(this)
-			},
-			{
-				name: "La Dolce Vita",
-				source: this.getDolceMenu.bind(this)
-			},
-			{
-				name: "JOP Antonius",
-				source: this.getJopMenu.bind(this)
-			},
-			{
-				name: "RP9",
-				source: this.getRp9Menu.bind(this)
-			}
-		];
+  handle(message) {
+    const menuMap = [
+      {
+        name: "Püssirohukelder",
+        source: this.getGunPowderCellarMenu.bind(this)
+      },
+      {
+        name: "Sheriff",
+        source: this.getSheriffMenu.bind(this)
+      },
+      {
+        name: "La Dolce Vita",
+        source: this.getDolceMenu.bind(this)
+      },
+      {
+        name: "JOP Antonius",
+        source: this.getJopMenu.bind(this)
+      },
+      {
+        name: "RP9",
+        source: this.getRp9Menu.bind(this)
+      },
+      {
+        name: "Pahad Poisid",
+        source: this.getBadBoysMenu.bind(this)
+      },
+      {
+        name: "Ristiisa Pubi",
+        source: this.getGodfatherMenu.bind(this)
+      }
+    ];
 
-		Promise.all(
-			menuMap.map(item => item.source().catch(() => Promise.resolve(null)))
-		)
-			.then(menus => {
-				menus.forEach((info, index) => {
-					const menuInfo = menuMap[index];
+    Promise.all(
+      menuMap.map(item => item.source().catch(() => Promise.resolve(null)))
+    )
+      .then(menus => {
+        menus.forEach((info, index) => {
+          const menuInfo = menuMap[index];
 
-					if (!info) {
-						console.log("failed fetching menu #" + index);
+          if (!info) {
+            console.log("failed fetching menu #" + index);
 
-						message.respond(
-							"*" + menuInfo.name + ":* _getting information failed_"
-						);
+            message.respond(
+              "*" + menuInfo.name + ":* _getting information failed_"
+            );
 
-						return;
-					}
+            return;
+          }
 
-					let response = "*" + menuInfo.name + ":* " + info.items.join("; ");
+          let response = "*" + menuInfo.name + ":* " + info.items.join("; ");
 
-					if (info.date instanceof Date) {
-						response += " (" + moment(info.date).fromNow() + ")";
-					}
+          if (info.date instanceof Date) {
+            response += " (" + moment(info.date).fromNow() + ")";
+          }
 
-					message.respond(response);
-				});
-			})
-			.catch(error => {
-				message.respond(error.stack.toString());
-			});
-	}
+          message.respond(response);
+        });
+      })
+      .catch(error => {
+        message.respond(error.stack.toString());
+      });
+  }
 
-	getGunPowderCellarMenu() {
-		const menuItemRegexp = /^(\*)(.*)$/;
+  getGunPowderCellarMenu() {
+    const menuItemRegexp = /^(\*)(.*)$/;
 
-		return this.getFacebookMenu(
-			"pyssirohukelder",
-			post => {
-				const lines = post.message.split("\n");
+    return this.getFacebookMenu(
+      "pyssirohukelder",
+      post => {
+        const lines = post.message.split("\n");
 
-				return lines.find(line => {
-					return menuItemRegexp.test(line);
-				});
-			},
-			post => {
-				return post.message.split("\n").reduce((list, line) => {
-					const matches = menuItemRegexp.exec(line);
+        return lines.find(line => {
+          return menuItemRegexp.test(line);
+        });
+      },
+      post => {
+        return post.message.split("\n").reduce((list, line) => {
+          const matches = menuItemRegexp.exec(line);
 
-					if (!matches) {
-						return list;
-					}
+          if (!matches) {
+            return list;
+          }
 
-					list.push(matches[2]);
+          list.push(matches[2]);
 
-					return list;
-				}, []);
-			}
-		);
-	}
+          return list;
+        }, []);
+      }
+    );
+  }
 
-	getSheriffMenu() {
-		return this.getFacebookMenu(
-			"751390341596578",
-			post => {
-				const lines = post.message.split("\n");
+  getSheriffMenu() {
+    return this.getFacebookMenu(
+      "751390341596578",
+      post => {
+        const lines = post.message.split("\n");
 
-				return lines.find(line => {
-					return /päevapakkumised/i.test(line);
-				});
-			},
-			post => {
-				return post.message.split("\n").reduce((list, line, index) => {
-					if (index > 0) {
-						list.push(line);
-					}
+        return lines.find(line => {
+          return /päevapakkumised/i.test(line);
+        });
+      },
+      post => {
+        return post.message.split("\n").reduce((list, line, index) => {
+          if (index > 0) {
+            list.push(line);
+          }
 
-					return list;
-				}, []);
-			}
-		);
-	}
+          return list;
+        }, []);
+      }
+    );
+  }
 
-	getDolceMenu() {
-		return this.getDailySpecialOffers(".name", "/tartu/la-dolce-vita", html => {
-			const itemText = htmlToText.fromString(html, {
-				wordwrap: 1000
-			});
+  getDolceMenu() {
+    return this.getDailySpecialOffers(".name", "/tartu/la-dolce-vita", html => {
+      const itemText = htmlToText.fromString(html, {
+        wordwrap: 1000
+      });
 
-			return itemText.split(".");
-		});
-	}
+      return itemText.split(".");
+    });
+  }
 
-	getJopMenu() {
-		return this.getDailySpecialOffers(
-			".name",
-			"/tartu/jop-antonius-kohvik",
-			html => {
-				const itemText = htmlToText.fromString(html, {
-					wordwrap: 1000
-				});
+  getJopMenu() {
+    return this.getDailySpecialOffers(
+      ".name",
+      "/tartu/jop-antonius-kohvik",
+      html => {
+        const itemText = htmlToText.fromString(html, {
+          wordwrap: 1000
+        });
 
-				return itemText.split(".");
-			}
-		);
-	}
+        return itemText.split(".");
+      }
+    );
+  }
 
-	getRp9Menu() {
-		return this.getDailySpecialOffers(".name", "/tartu/pubi-rp9", html => {
-			const itemText = htmlToText.fromString(html, {
-				wordwrap: 1000
-			});
+  getRp9Menu() {
+    return this.getDailySpecialOffers(".name", "/tartu/pubi-rp9", html => {
+      const itemText = htmlToText.fromString(html, {
+        wordwrap: 1000
+      });
 
-			return itemText.split(".");
-		});
-	}
+      return itemText.split(".");
+    });
+  }
 
-	getDailySpecialOffers(name, path, htmlToItemsConverter) {
-		const dailySpecialOptions = {
-			host: "www.paevapraad.ee",
-			port: 443,
-			path,
-			method: "GET"
-		};
+  getBadBoysMenu() {
+    return this.getDailySpecialOffers(".name", "/tartu/pahad-poisid", html => {
+      const itemText = htmlToText.fromString(html, {
+        wordwrap: 1000
+      });
 
-		return new Promise((resolve, reject) => {
-			const req = https.request(dailySpecialOptions, res => {
-				let item = "";
+      return itemText.split(".");
+    });
+  }
 
-				res.setEncoding("utf8");
-				res.on("data", chunk => {
-					const $ = cheerio.load(chunk);
-					const chunkHtml = $(name);
+  getGodfatherMenu() {
+    return this.getDailySpecialOffers(".name", "/tartu/ristiisa-pubi", html => {
+      const itemText = htmlToText.fromString(html, {
+        wordwrap: 1000
+      });
 
-					if (chunkHtml !== null) {
-						item += chunkHtml;
-					}
-				});
-				res.on("end", () => {
-					const items = htmlToItemsConverter(item);
+      console.log(itemText);
 
-					resolve({
-						items: items,
-						date: null
-					});
-				});
-			});
+      return itemText.split(".");
+    });
+  }
 
-			req.on("error", err => reject(err));
-			req.end();
-		});
-	}
+  getDailySpecialOffers(name, path, htmlToItemsConverter) {
+    const dailySpecialOptions = {
+      host: "www.paevapraad.ee",
+      port: 443,
+      path,
+      method: "GET"
+    };
 
-	getFacebookMenu(userId, postMatcherFn, menuExtracterFn) {
-		const facebook = new Facebook(
-			this.bot.config.facebook.id,
-			this.bot.config.facebook.secret
-		);
+    return new Promise((resolve, reject) => {
+      const req = https.request(dailySpecialOptions, res => {
+        let item = "";
 
-		return facebook
-			.getFeed(userId)
-			.then(data => {
-				const post = data.find(postMatcherFn) || null;
+        res.setEncoding("utf8");
+        res.on("data", chunk => {
+          const $ = cheerio.load(chunk);
+          const chunkHtml = $(name);
 
-				if (!post) {
-					return null;
-				}
+          if (chunkHtml !== null) {
+            item += chunkHtml;
+          }
+        });
+        res.on("end", () => {
+          const items = htmlToItemsConverter(item);
 
-				const items = menuExtracterFn(post);
-				const date = new Date(post.created_time);
+          resolve({
+            items: items,
+            date: null
+          });
+        });
+      });
 
-				return {
-					items,
-					date,
-					post
-				};
-			})
-			.catch(error => {
-				console.error(
-					'fetching menu for "' + userId + '" failed: ' + error.message
-				);
-			});
-	}
+      req.on("error", err => reject(err));
+      req.end();
+    });
+  }
+
+  getFacebookMenu(userId, postMatcherFn, menuExtracterFn) {
+    const facebook = new Facebook(
+      this.bot.config.facebook.id,
+      this.bot.config.facebook.secret
+    );
+
+    return facebook
+      .getFeed(userId)
+      .then(data => {
+        const post = data.find(postMatcherFn) || null;
+
+        if (!post) {
+          return null;
+        }
+
+        const items = menuExtracterFn(post);
+        const date = new Date(post.created_time);
+
+        return {
+          items,
+          date,
+          post
+        };
+      })
+      .catch(error => {
+        console.error(
+          'fetching menu for "' + userId + '" failed: ' + error.message
+        );
+      });
+  }
 }
-
